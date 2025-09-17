@@ -1,0 +1,131 @@
+本文件記錄 RISC-V 教材開發的環境設定流程
+Last update: 2024/08/11
+
+================================================================================================
+使用外部 Windows WSL + Ubuntu 22.04 + MobaXterm
+================================================================================================
+
+# 更新可用的軟體套件清單
+sudo apt-get update
+
+
+================================================================================================
+編譯 gem5 RISC-V 版本
+================================================================================================
+
+# 參考資料 URL: https://www.gem5.org/documentation/general_docs/building
+
+# 安裝 gem5 所需的相依性套件
+sudo apt install build-essential git m4 scons zlib1g zlib1g-dev \
+    libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev \
+    python3-dev libboost-all-dev pkg-config python3-tk python3-pip
+
+# 下載 gem5 原始碼
+git clone https://github.com/gem5/gem5
+
+# 進入 gem5 目錄
+cd gem5/
+
+# 安裝 Python 套件需求
+pip install -r requirements.txt
+
+# 使用 scons 編譯 gem5（指定編譯 RISC-V 版本）
+scons build/RISCV/gem5.opt -j 5 # 5 表示可同時使用處理器核心數量
+
+# 執行編譯好的 gem5 二進位檔案
+./build/RISCV/gem5.opt configs/deprecated/example/se.py -c tests/test-progs/hello/bin/riscv/linux/hello
+
+
+================================================================================================
+編譯 RISC-V 的 toolchain (只安裝 Newlib)
+================================================================================================
+
+# 參考資料 URL: https://github.com/riscv-collab/riscv-gnu-toolchain
+
+# 安裝 RISC-V toolchain 所需的其他套件
+sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev
+
+# 下載 RISC-V 工具鏈的原始碼
+git clone https://github.com/riscv/riscv-gnu-toolchain
+
+# 進入工具鏈目錄
+cd riscv-gnu-toolchain/
+
+# 配置並編譯工具鏈 (指定安裝路徑為 /opt/riscv，需要 root 權限)
+./configure --prefix=/opt/riscv
+
+# 編譯 gem5 (必須有 root 權限才能寫入 /opt/riscv 目錄)
+make -j5
+
+# 將工具鏈執行檔路徑加入環境變數
+vi .bashrc
+export PATH=/opt/riscv/bin:$PATH
+
+# 使用 RISC-V 編譯器編譯 hello.c 範例
+riscv64-unknown-elf-gcc hello.c -o hello_new -static
+
+# 如有需要，可變更 gem5 及 RISC-V 工具鏈的擁有者
+chown -R user:group gem5
+chown -R user:group riscv-gnu-toolchain
+
+# 進入 gem5 測試程式目錄
+cd gem5/tests/test-progs/hello/src
+
+# 編譯 hello.c 範例 (-O0 代表不要optimization)
+riscv64-unknown-elf-gcc hello.c -static -O0 -o OUT
+
+# 反組譯編譯好的程式 (no-aliases變組語)
+riscv64-unknown-elf-objdump -d OUT -M no-aliases > OUT.dump
+
+
+================================================================================================
+安裝 Konata pipeline visualizer
+================================================================================================
+
+# 參考資料 URL: https://github.com/shioyadan/Konata
+
+# 安裝 Konata 所需的依賴套件
+sudo apt install libgconf-2-4 libgtk-3-0 libxss1 libnss3 libasound2 libx11-xcb1 libcanberra-gtk3-module libgbm-dev
+
+# 參考文件 URL: https://github.com/shioyadan/Konata/wiki/gem5-konata.pdf
+
+# 檔案下載 URL: https://github.com/shioyadan/Konata/releases
+
+# 執行 gem5 並指定 debug 標誌與輸出檔案
+./build/RISCV/gem5.opt --debug-flags=O3PipeView,O3CPUAll --debug-file=trace.out configs/deprecated/example/se.py --cpu-type=RiscvO3CPU --caches -c tests/test-progs/hello/bin/riscv/linux/hello -P "system.cpu[0].dispatchWidth=1" -P "system.cpu[0].fetchWidth=1" -P "system.cpu[0].decodeWidth=1"
+
+# 執行 konata
+./konata
+
+
+# 可實驗調整更多 CPU 設定參數，觀察調整前後執行效能的差異
+-P "system.cpu[0].fetchWidth=1"
+-P "system.cpu[0].decodeWidth=1"
+-P "system.cpu[0].dispatchWidth=1"
+-P "system.cpu[0].issueWidth=1"
+-P "system.cpu[0].numROBEntries=1"
+-P "system.cpu[0].numPhysIntRegs=34"
+-P "system.cpu[0].numPhysFloatRegs=33"
+
+no use: -P "system.cpu[0].numRobs=1"
+
+
+================================================================================================
+安裝 LLVM-MCA
+================================================================================================
+
+# 參考資料 URL: https://llvm.org/docs/CommandGuide/llvm-mca.html
+
+# 安裝 LLVM
+sudo apt install llvm
+
+# 使用 LLVM-MCA 工具
+llvm-mca -march=riscv64 -mcpu=sifive-u74 --timeline  1_indept.s
+
+# 設定感興趣的觀察區間
+# LLVM-MCA-BEGIN
+  ...
+# LLVM-MCA-END
+
+
+

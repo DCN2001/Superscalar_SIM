@@ -1,0 +1,15 @@
+Default: 		(no addition bash)
+
+FW reduce:		-P "system.cpu[0].fetchWidth=1"
+
+IW reduce:		-P "system.cpu[0].issueWidth=1"
+
+CW reduce:		-P "system.cpu[0].commitWidth=1"
+
+ROBS reduce:		-P "system.cpu[0].numROBEntries=1"
+
+IQS reduce:		-P "system.cpu[0].numIQEntries=1"
+
+Num PhyReg reduce:	-P "system.cpu[0].numPhysIntRegs=34"
+
+Half of default:	-P "system.cpu[0].fetchWidth=4" -P "system.cpu[0].issueWidth=4" -P "system.cpu[0].commitWidth=4" -P "system.cpu[0].numROBEntries=96" -P "system.cpu[0].numIQEntries=32" -P "system.cpu[0].numPhysIntRegs=128"
