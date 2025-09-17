@@ -11,11 +11,12 @@ was executed under eight different configurations, varying parameters such as fe
 - **Tools**: gem5 RISCV version, RISCV toolchain, Konata pipeline visualizer
 - **Microarchitecture configurations v.s results**:
 ![Config](images/config.png)
-![Result](images/results.png)
-- **Details**: See NTU_R13942128.pdf for detail descriptions.  
+![Result](images/results.png)  
+  
+- **Details**: See [report](./NTU_R13942128.pdf) for detail descriptions.  
 
 
 ## Replicate guideline
-- Please refer to "guide.txt" for environment setup and simulation.   
-- All the  test code is under the "code" folder.
+- Please refer to [guide](./guide.txt) for environment setup and simulation.   
+- All the  test code is under the [code](./code) folder.
 
